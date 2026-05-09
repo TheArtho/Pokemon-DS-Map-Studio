@@ -17,6 +17,7 @@ public class ExportMapsObjDialog extends JDialog {
     private int returnValue = CANCEL_OPTION;
     private boolean includeVertexColors = true;
     private boolean useExportgroups = true;
+    private boolean exportVisibleLayersOnly = false;
 
     public ExportMapsObjDialog(Window owner, String title) {
         super(owner);
@@ -51,6 +52,17 @@ public class ExportMapsObjDialog extends JDialog {
         return includeVertexColors;
     }
 
+    public boolean exportVisibleLayersOnly() {
+        return exportVisibleLayersOnly;
+    }
+
+    public void setVisibleLayersOnlyOptionVisible(boolean visible) {
+        jcbVisibleLayersOnly.setVisible(visible);
+        if (visible) {
+            setSize(getWidth(), 395);
+        }
+    }
+
     public boolean exportAllMapsSeparately() {
         return jrbExportAllMapsSeparately.isSelected();
     }
@@ -79,10 +91,15 @@ public class ExportMapsObjDialog extends JDialog {
         useExportgroups = jcbUseExportgroups.isSelected();
     }
 
+    private void jcbVisibleLayersOnlyActionPerformed(ActionEvent e) {
+        exportVisibleLayersOnly = jcbVisibleLayersOnly.isSelected();
+    }
+
     private void initComponents() {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents
         jPanel1 = new JPanel();
         jcbVertexColors = new JCheckBox();
+        jcbVisibleLayersOnly = new JCheckBox();
         label1 = new JLabel();
         jsTileUpscaling = new JSpinner();
         jrbExportAllMapsBothModes = new JRadioButton();
@@ -122,6 +139,7 @@ public class ExportMapsObjDialog extends JDialog {
                 "[fill]" +
                 "[fill]" +
                 "[fill]" +
+                "[fill]" +
                 "[]" +
                 "[]" +
                 "[]" +
@@ -133,36 +151,42 @@ public class ExportMapsObjDialog extends JDialog {
             jcbVertexColors.addActionListener(e -> jcbVertexColorsActionPerformed(e));
             jPanel1.add(jcbVertexColors, "cell 0 0 2 1");
 
+            //---- jcbVisibleLayersOnly ----
+            jcbVisibleLayersOnly.setText("Export Visible Layers Only");
+            jcbVisibleLayersOnly.setVisible(false);
+            jcbVisibleLayersOnly.addActionListener(e -> jcbVisibleLayersOnlyActionPerformed(e));
+            jPanel1.add(jcbVisibleLayersOnly, "cell 0 1 2 1");
+
             //---- label1 ----
             label1.setText("Tile Upscaling:");
-            jPanel1.add(label1, "cell 0 1");
+            jPanel1.add(label1, "cell 0 2");
 
             //---- jsTileUpscaling ----
             jsTileUpscaling.setModel(new SpinnerNumberModel(1.0F, 1.0F, null, 0.001F));
-            jPanel1.add(jsTileUpscaling, "cell 1 1");
+            jPanel1.add(jsTileUpscaling, "cell 1 2");
 
             //---- jrbExportAllMapsBothModes ----
             jrbExportAllMapsBothModes.setSelected(true);
             jrbExportAllMapsBothModes.setText("Export All Both Separately and Joined");
-            jPanel1.add(jrbExportAllMapsBothModes, "cell 0 2 2 1");
+            jPanel1.add(jrbExportAllMapsBothModes, "cell 0 3 2 1");
 
             //---- jrbExportAllMapsSeparately ----
             jrbExportAllMapsSeparately.setText("Export All Maps Separately");
-            jPanel1.add(jrbExportAllMapsSeparately, "cell 0 3 2 1");
+            jPanel1.add(jrbExportAllMapsSeparately, "cell 0 4 2 1");
 
             //---- jrbExportCurrentMap ----
             jrbExportCurrentMap.setText("Export Only Current Map");
-            jPanel1.add(jrbExportCurrentMap, "cell 0 5 2 1");
+            jPanel1.add(jrbExportCurrentMap, "cell 0 6 2 1");
 
             //---- jrbExportAllMapsJoined ----
             jrbExportAllMapsJoined.setText("Export All Maps Joined");
-            jPanel1.add(jrbExportAllMapsJoined, "cell 0 4 2 1");
+            jPanel1.add(jrbExportAllMapsJoined, "cell 0 5 2 1");
 
             //---- jcbUseExportgroups ----
             jcbUseExportgroups.setText("Use Export Groups");
             jcbUseExportgroups.setActionCommand("Use Export Groups");
             jcbUseExportgroups.addActionListener(e -> jcbUseExportgroupsActionPerformed(e));
-            jPanel1.add(jcbUseExportgroups, "cell 0 8");
+            jPanel1.add(jcbUseExportgroups, "cell 0 9");
         }
         contentPane.add(jPanel1, "cell 0 0");
 
@@ -202,6 +226,7 @@ public class ExportMapsObjDialog extends JDialog {
     // JFormDesigner - Variables declaration - DO NOT MODIFY  //GEN-BEGIN:variables
     private JPanel jPanel1;
     private JCheckBox jcbVertexColors;
+    private JCheckBox jcbVisibleLayersOnly;
     private JLabel label1;
     private JSpinner jsTileUpscaling;
     private JRadioButton jrbExportAllMapsBothModes;

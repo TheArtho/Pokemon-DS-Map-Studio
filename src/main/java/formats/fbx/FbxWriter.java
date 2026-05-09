@@ -53,6 +53,7 @@ public class FbxWriter {
     private final boolean saveTextures;
     private final boolean saveVertexColors;
     private final float tileUpscale;
+    private final boolean[] visibleLayers;
 
     private ArrayList<Tile> outTiles = new ArrayList<>();
     private ArrayList<Integer> textureUsage = new ArrayList<>();
@@ -61,12 +62,19 @@ public class FbxWriter {
 
     public FbxWriter(Tileset tset, HashMap<Point, MapGrid> maps, String savePath, int game,
                      boolean saveTextures, boolean saveVertexColors, float tileUpscale) {
+        this(tset, maps, savePath, game, saveTextures, saveVertexColors, tileUpscale, null);
+    }
+
+    public FbxWriter(Tileset tset, HashMap<Point, MapGrid> maps, String savePath, int game,
+                     boolean saveTextures, boolean saveVertexColors, float tileUpscale,
+                     boolean[] visibleLayers) {
         this.tset = tset;
         this.maps = maps;
         this.savePathFbx = savePath;
         this.saveTextures = saveTextures;
         this.saveVertexColors = saveVertexColors;
         this.tileUpscale = tileUpscale;
+        this.visibleLayers = visibleLayers == null ? null : visibleLayers.clone();
 
         if (game == Game.BLACK || game == Game.WHITE || game == Game.BLACK2 || game == Game.WHITE2) {
             maxTileableSize = MAX_TILEABLE_SIZE_BW;
@@ -75,11 +83,17 @@ public class FbxWriter {
 
     public FbxWriter(Tileset tset, MapGrid grid, String savePath, int game,
                      boolean saveTextures, boolean saveVertexColors, float tileUpscale) {
+        this(tset, grid, savePath, game, saveTextures, saveVertexColors, tileUpscale, null);
+    }
+
+    public FbxWriter(Tileset tset, MapGrid grid, String savePath, int game,
+                     boolean saveTextures, boolean saveVertexColors, float tileUpscale,
+                     boolean[] visibleLayers) {
         this(tset, new HashMap<Point, MapGrid>(1) {
             {
                 put(new Point(0, 0), grid);
             }
-        }, savePath, game, saveTextures, saveVertexColors, tileUpscale);
+        }, savePath, game, saveTextures, saveVertexColors, tileUpscale, visibleLayers);
     }
 
     public void writeMapFbx() throws FileNotFoundException {
@@ -125,6 +139,9 @@ public class FbxWriter {
         long time = System.currentTimeMillis();
         for (HashMap.Entry<Point, MapGrid> mapEntry : maps.entrySet()) {
             for (int k = 0; k < mapEntry.getValue().numLayers; k++) {
+                if (!isLayerVisible(k)) {
+                    continue;
+                }
                 boolean[][] writtenGrid = new boolean[cols][rows];
                 for (int i = 0; i < cols; i++) {
                     for (int j = 0; j < rows; j++) {
@@ -134,6 +151,10 @@ public class FbxWriter {
             }
         }
         System.out.println("Elapsed time: " + (System.currentTimeMillis() - time) + " ms");
+    }
+
+    private boolean isLayerVisible(int layerIndex) {
+        return visibleLayers == null || layerIndex >= visibleLayers.length || visibleLayers[layerIndex];
     }
 
     private void evaluateTile(MapGrid grid, Point mapCoords, int layer, int c, int r,

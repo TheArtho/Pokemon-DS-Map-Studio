@@ -51,6 +51,10 @@ final class MapExportActions {
         this.handler = context.handler;
     }
 
+    private boolean[] getVisibleLayersForFbxExport(boolean exportVisibleLayersOnly) {
+        return exportVisibleLayersOnly ? handler.renderLayers.clone() : null;
+    }
+
     void saveAllTilesAsObjWithDialog() {
         if (handler.getTileset().size() > 0) {
             final ExportTileDialog exportTileDialog = new ExportTileDialog(handler.getMainFrame(),
@@ -151,6 +155,7 @@ final class MapExportActions {
     boolean saveMapAsFbxWithDialog(boolean saveTextures) {
         final ExportSingleMapObjDialog exportMapDialog = new ExportSingleMapObjDialog(frame,
                 "Export Single FBX Map - Settings");
+        exportMapDialog.setVisibleLayersOnlyOptionVisible(true);
         exportMapDialog.setLocationRelativeTo(frame);
         exportMapDialog.setVisible(true);
 
@@ -158,6 +163,7 @@ final class MapExportActions {
             boolean includeVertexColors = exportMapDialog.includeVertexColors();
             boolean useExportgroups = exportMapDialog.useExportgroups();
             float tileUpscale = exportMapDialog.getTileUpscaling();
+            boolean[] visibleLayers = getVisibleLayersForFbxExport(exportMapDialog.exportVisibleLayersOnly());
 
             final JFileChooser fileChooser = new JFileChooser();
             fileChooser.setSelectedFile(new File(Utils.removeExtensionFromPath(handler.getMapMatrix().filePath)));
@@ -185,12 +191,12 @@ final class MapExportActions {
                         groupsToExport.add(currentExportGroupIndex);
 
                         handler.getMapMatrix().saveMapsAsFbx(path, saveTextures, includeVertexColors,
-                                groupsToExport, tileUpscale);
+                                groupsToExport, tileUpscale, visibleLayers);
                     } else {
                         type = "map";
 
                         handler.getGrid().saveMapToFBX(handler.getTileset(), path, saveTextures,
-                                includeVertexColors, tileUpscale);
+                                includeVertexColors, tileUpscale, visibleLayers);
                     }
                     JOptionPane.showMessageDialog(frame, "FBX " + type + " succesfully exported.",
                             type.substring(0, 1).toUpperCase() + type.substring(1) + " saved",
@@ -319,6 +325,7 @@ final class MapExportActions {
 
     boolean saveMapsAsFbxWithDialog(boolean saveTextures) {
         final ExportMapsObjDialog exportMapDialog = new ExportMapsObjDialog(frame, "Export FBX Maps Settings");
+        exportMapDialog.setVisibleLayersOnlyOptionVisible(true);
         exportMapDialog.setLocationRelativeTo(null);
         exportMapDialog.setVisible(true);
 
@@ -329,6 +336,7 @@ final class MapExportActions {
             boolean exportAllMapsJoined = exportMapDialog.exportAllMapsJoined();
             boolean useExportgroups = exportMapDialog.useExportgroups();
             float tileUpscale = exportMapDialog.getTileUpscaling();
+            boolean[] visibleLayers = getVisibleLayersForFbxExport(exportMapDialog.exportVisibleLayersOnly());
 
             final JFileChooser fileChooser = new JFileChooser();
             fileChooser.setSelectedFile(new File(Utils.removeExtensionFromPath(handler.getMapMatrix().filePath)));
@@ -354,9 +362,9 @@ final class MapExportActions {
                     if (exportAllMapsBothModes) {
                         path = Utils.removeMapCoordsFromName(path);
                         handler.getMapMatrix().saveMapsAsFbx(path, saveTextures, includeVertexColors,
-                                handler.getMapMatrix().getExportGroupIndices(), tileUpscale);
+                                handler.getMapMatrix().getExportGroupIndices(), tileUpscale, visibleLayers);
                         handler.getMapMatrix().saveMapsAsFbxJoined(path, saveTextures, includeVertexColors,
-                                tileUpscale);
+                                tileUpscale, visibleLayers);
 
                         JOptionPane.showMessageDialog(frame, "FBX " + type
                                         + " succesfully exported in both modes.",
@@ -365,7 +373,7 @@ final class MapExportActions {
                     } else if (exportAllMapsSeparately) {
                         path = Utils.removeMapCoordsFromName(path);
                         handler.getMapMatrix().saveMapsAsFbx(path, saveTextures, includeVertexColors,
-                                handler.getMapMatrix().getExportGroupIndices(), tileUpscale);
+                                handler.getMapMatrix().getExportGroupIndices(), tileUpscale, visibleLayers);
 
                         JOptionPane.showMessageDialog(frame, "FBX " + type + " succesfully exported separately.",
                                 type.substring(0, 1).toUpperCase() + type.substring(1) + " saved",
@@ -373,7 +381,7 @@ final class MapExportActions {
                     } else if (exportAllMapsJoined) {
                         path = Utils.removeMapCoordsFromName(path);
                         handler.getMapMatrix().saveMapsAsFbxJoined(path, saveTextures, includeVertexColors,
-                                tileUpscale);
+                                tileUpscale, visibleLayers);
 
                         JOptionPane.showMessageDialog(frame, "FBX maps succesfully exported as one.", "Map saved",
                                 JOptionPane.INFORMATION_MESSAGE);
@@ -383,10 +391,10 @@ final class MapExportActions {
                             groupsToExport.add(handler.getCurrentMap().getExportGroupIndex());
 
                             handler.getMapMatrix().saveMapsAsFbx(path, saveTextures, includeVertexColors,
-                                    groupsToExport, tileUpscale);
+                                    groupsToExport, tileUpscale, visibleLayers);
                         } else {
                             handler.getGrid().saveMapToFBX(handler.getTileset(), path, saveTextures,
-                                    includeVertexColors, tileUpscale);
+                                    includeVertexColors, tileUpscale, visibleLayers);
                         }
 
                         JOptionPane.showMessageDialog(frame, "FBX map succesfully exported.", "Map saved",

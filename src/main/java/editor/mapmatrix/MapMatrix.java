@@ -476,6 +476,10 @@ public class MapMatrix {
     }
 
     public void saveMapsAsFbx(String path, boolean saveTextures, boolean includeVertexColors, HashSet<Integer> exportGroups, float tileUpscale) throws FileNotFoundException {
+        saveMapsAsFbx(path, saveTextures, includeVertexColors, exportGroups, tileUpscale, null);
+    }
+
+    public void saveMapsAsFbx(String path, boolean saveTextures, boolean includeVertexColors, HashSet<Integer> exportGroups, float tileUpscale, boolean[] visibleLayers) throws FileNotFoundException {
         removeUnusedMaps();
 
         String folderPath = new File(path).getParent();
@@ -489,7 +493,8 @@ public class MapMatrix {
                 if (index == 0) {
                     for (HashMap.Entry<Point, MapGrid> mapEntry : currentExportGroup.entrySet()) {
                         fbxFilePath = getFilePathWithCoords(matrix, folderPath, fileName, mapEntry.getKey(), "fbx");
-                        mapEntry.getValue().saveMapToFBX(handler.getTileset(), fbxFilePath, saveTextures, includeVertexColors, tileUpscale);
+                        mapEntry.getValue().saveMapToFBX(handler.getTileset(), fbxFilePath, saveTextures,
+                                includeVertexColors, tileUpscale, visibleLayers);
                     }
                 } else {
                     int lowestXcoord;
@@ -531,18 +536,24 @@ public class MapMatrix {
                         fbxFilePath = getFilePathWithCoords(matrix, folderPath, fileName + groupSuffix + '_', groupCenterCoords, "fbx");
                     }
 
-                    new FbxWriter(handler.getTileset(), newExportGroup, fbxFilePath, handler.getGameIndex(), saveTextures, includeVertexColors, tileUpscale).writeMapFbx();
+                    new FbxWriter(handler.getTileset(), newExportGroup, fbxFilePath, handler.getGameIndex(),
+                            saveTextures, includeVertexColors, tileUpscale, visibleLayers).writeMapFbx();
                 }
             }
         } else {
             for (HashMap.Entry<Point, MapData> mapEntry : matrix.entrySet()) {
                 fbxFilePath = getFilePathWithCoords(matrix, folderPath, fileName, mapEntry.getKey(), "fbx");
-                mapEntry.getValue().getGrid().saveMapToFBX(handler.getTileset(), fbxFilePath, saveTextures, includeVertexColors, tileUpscale);
+                mapEntry.getValue().getGrid().saveMapToFBX(handler.getTileset(), fbxFilePath, saveTextures,
+                        includeVertexColors, tileUpscale, visibleLayers);
             }
         }
     }
 
     public void saveMapsAsFbxJoined(String path, boolean saveTextures, boolean includeVertexColors, float tileUpscale) throws FileNotFoundException {
+        saveMapsAsFbxJoined(path, saveTextures, includeVertexColors, tileUpscale, null);
+    }
+
+    public void saveMapsAsFbxJoined(String path, boolean saveTextures, boolean includeVertexColors, float tileUpscale, boolean[] visibleLayers) throws FileNotFoundException {
         removeUnusedMaps();
 
         String folderPath = new File(path).getParent();
@@ -551,7 +562,7 @@ public class MapMatrix {
         String fbxFilePath = folderPath + File.separator + fileName + ".fbx";
 
         FbxWriter writer = new FbxWriter(handler.getTileset(), generateGridHashMap(), fbxFilePath, handler.getGameIndex(),
-                saveTextures, includeVertexColors, tileUpscale);
+                saveTextures, includeVertexColors, tileUpscale, visibleLayers);
         writer.writeMapFbx();
 
     }

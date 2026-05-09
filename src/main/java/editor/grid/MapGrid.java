@@ -130,9 +130,15 @@ public class MapGrid {
 
     public void saveMapToFBX(Tileset tset, String path, boolean saveTextures,
                              boolean includeVertexColors, float tileUpscale) throws FileNotFoundException {
+        saveMapToFBX(tset, path, saveTextures, includeVertexColors, tileUpscale, null);
+    }
+
+    public void saveMapToFBX(Tileset tset, String path, boolean saveTextures,
+                             boolean includeVertexColors, float tileUpscale,
+                             boolean[] visibleLayers) throws FileNotFoundException {
 
         FbxWriter writer = new FbxWriter(tset, this, path, handler.getGameIndex(),
-                saveTextures, includeVertexColors, tileUpscale);
+                saveTextures, includeVertexColors, tileUpscale, visibleLayers);
         writer.writeMapFbx();
     }
 

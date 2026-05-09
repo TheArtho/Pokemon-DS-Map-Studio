@@ -18,6 +18,7 @@ public class ExportSingleMapObjDialog extends JDialog {
     private int returnValue = CANCEL_OPTION;
     private boolean includeVertexColors = true;
     private boolean useExportgroups = true;
+    private boolean exportVisibleLayersOnly = false;
 
     public ExportSingleMapObjDialog(Window owner, String title) {
         super(owner);
@@ -58,6 +59,18 @@ public class ExportSingleMapObjDialog extends JDialog {
         return useExportgroups;
     }
 
+    public boolean exportVisibleLayersOnly() {
+
+        return exportVisibleLayersOnly;
+    }
+
+    public void setVisibleLayersOnlyOptionVisible(boolean visible) {
+        jcbVisibleLayersOnly.setVisible(visible);
+        if (visible) {
+            setSize(getWidth(), 265);
+        }
+    }
+
     public float getTileUpscaling(){
         try {
             return (Float)jsTileUpscaling.getValue();
@@ -70,10 +83,15 @@ public class ExportSingleMapObjDialog extends JDialog {
         includeVertexColors = jcbVertexColors.isSelected();
     }
 
+    private void jcbVisibleLayersOnlyActionPerformed(ActionEvent e) {
+        exportVisibleLayersOnly = jcbVisibleLayersOnly.isSelected();
+    }
+
     private void initComponents() {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents
         jPanel1 = new JPanel();
         jcbVertexColors = new JCheckBox();
+        jcbVisibleLayersOnly = new JCheckBox();
         jcbExportgroups = new JCheckBox();
         label1 = new JLabel();
         jsTileUpscaling = new JSpinner();
@@ -107,6 +125,7 @@ public class ExportSingleMapObjDialog extends JDialog {
                 "[fill]" +
                 "[fill]" +
                 "[fill]" +
+                "[fill]" +
                 "[]" +
                 "[]"));
 
@@ -116,29 +135,35 @@ public class ExportSingleMapObjDialog extends JDialog {
             jcbVertexColors.addActionListener(e -> jcbVertexColorsActionPerformed(e));
             jPanel1.add(jcbVertexColors, "cell 0 0 2 1");
 
+            //---- jcbVisibleLayersOnly ----
+            jcbVisibleLayersOnly.setText("Export Visible Layers Only");
+            jcbVisibleLayersOnly.setVisible(false);
+            jcbVisibleLayersOnly.addActionListener(e -> jcbVisibleLayersOnlyActionPerformed(e));
+            jPanel1.add(jcbVisibleLayersOnly, "cell 0 1 2 1");
+
             //---- jcbExportgroups ----
             jcbExportgroups.setSelected(true);
             jcbExportgroups.setText("Render whole group");
             jcbExportgroups.addActionListener(e -> jcbExportgroupsActionPerformed(e));
-            jPanel1.add(jcbExportgroups, "cell 0 0 2 1");
+            jPanel1.add(jcbExportgroups, "cell 0 2 2 1");
 
             //---- label1 ----
             label1.setText("Tile Upscaling:");
-            jPanel1.add(label1, "cell 0 1");
+            jPanel1.add(label1, "cell 0 3");
 
             //---- jsTileUpscaling ----
             jsTileUpscaling.setModel(new SpinnerNumberModel(1.0F, 1.0F, null, 0.001F));
-            jPanel1.add(jsTileUpscaling, "cell 1 1");
+            jPanel1.add(jsTileUpscaling, "cell 1 3");
 
             //---- jbAccept ----
             jbAccept.setText("OK");
             jbAccept.addActionListener(e -> jbAcceptActionPerformed(e));
-            jPanel1.add(jbAccept, "cell 0 5,alignx right,growx 0");
+            jPanel1.add(jbAccept, "cell 0 6,alignx right,growx 0");
 
             //---- jbCancel ----
             jbCancel.setText("Cancel");
             jbCancel.addActionListener(e -> jbCancelActionPerformed(e));
-            jPanel1.add(jbCancel, "cell 1 5");
+            jPanel1.add(jbCancel, "cell 1 6");
         }
         contentPane.add(jPanel1, "cell 0 0");
         setSize(315, 225);
@@ -149,6 +174,7 @@ public class ExportSingleMapObjDialog extends JDialog {
     // JFormDesigner - Variables declaration - DO NOT MODIFY  //GEN-BEGIN:variables
     private JPanel jPanel1;
     private JCheckBox jcbVertexColors;
+    private JCheckBox jcbVisibleLayersOnly;
     private JCheckBox jcbExportgroups;
     private JLabel label1;
     private JSpinner jsTileUpscaling;
