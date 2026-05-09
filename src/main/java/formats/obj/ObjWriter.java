@@ -109,7 +109,7 @@ public class ObjWriter {
         }
 
         System.out.println("Elapsed time: " + (System.currentTimeMillis() - time) + " ms");
-        writeTiles(outObj, outMtl);
+        writeTiles(outObj, outMtl, true);
 
         outObj.close();
         outMtl.close();
@@ -502,6 +502,10 @@ public class ObjWriter {
     }
 
     public void writeTiles(PrintWriter outObj, PrintWriter outMtl) {
+        writeTiles(outObj, outMtl, false);
+    }
+
+    private void writeTiles(PrintWriter outObj, PrintWriter outMtl, boolean applyMapExportRotation) {
         ArrayList<Float> vertexCoords = new ArrayList<>();
         ArrayList<Float> textureCoords = new ArrayList<>();
         ArrayList<Float> normalCoords = new ArrayList<>();
@@ -545,6 +549,18 @@ public class ObjWriter {
                     colorsOffsets.get(i));
         }
 
+        ArrayList<Float> vertexColors = null;
+        if (saveVertexColors) {
+            VertexColorBakeResult vertexColorBakeResult = bakeVertexColorsIntoVertices(vertexCoords, colors);
+            vertexCoords = vertexColorBakeResult.vertexCoords;
+            vertexColors = vertexColorBakeResult.vertexColors;
+        }
+
+        if (applyMapExportRotation) {
+            applyMapExportRotation(vertexCoords);
+            applyMapExportRotation(normalCoords);
+        }
+
         // Initialize array of arrays with quads and tris indices for each tex
         int numTextures = tset.getMaterials().size();
         ArrayList<ArrayList<Face>> fIndsQuad = new ArrayList<>(numTextures);
@@ -572,7 +588,7 @@ public class ObjWriter {
         outObj.println("o " + mapName);
         int numVertexCoords = vertexCoords.size() / 3;
         for (int i = 0; i < numVertexCoords; i++) {
-            writeVertexLine(outObj, vertexCoords, i);
+            writeVertexLine(outObj, vertexCoords, vertexColors, i);
         }
         int numTextureCoords = textureCoords.size() / 2;
         for (int i = 0; i < numTextureCoords; i++) {
@@ -582,13 +598,6 @@ public class ObjWriter {
         for (int i = 0; i < numNormalCoords; i++) {
             writeNormalCoordLine(outObj, normalCoords, i);
         }
-        if (saveVertexColors) {
-            int numColors = colors.size() / 3;
-            for (int i = 0; i < numColors; i++) {
-                writeColorLine(outObj, colors, i);
-            }
-        }
-
         // Calculate texture usage and write all faces
         textureUsage = countTextureUsage();
         for (int i = 0; i < numTextures; i++) {
@@ -615,11 +624,19 @@ public class ObjWriter {
     }
 
     private void writeVertexLine(PrintWriter out,
-                                 ArrayList<Float> vertexCoords, int vertexIndex) {
+                                 ArrayList<Float> vertexCoords,
+                                 ArrayList<Float> vertexColors,
+                                 int vertexIndex) {
         out.print("v ");
         out.print(vertexCoords.get(vertexIndex * 3) + " ");
         out.print(vertexCoords.get(vertexIndex * 3 + 1) + " ");
         out.print(vertexCoords.get(vertexIndex * 3 + 2));
+        if (vertexColors != null) {
+            out.print(" ");
+            out.print(vertexColors.get(vertexIndex * 3) + " ");
+            out.print(vertexColors.get(vertexIndex * 3 + 1) + " ");
+            out.print(vertexColors.get(vertexIndex * 3 + 2));
+        }
         out.println();
     }
 
@@ -640,27 +657,98 @@ public class ObjWriter {
         out.println();
     }
 
-    private void writeColorLine(PrintWriter out,
-                                ArrayList<Float> colors, int colorIndex) {
-        out.print("c ");
-        out.print(colors.get(colorIndex * 3) + " ");
-        out.print(colors.get(colorIndex * 3 + 1) + " ");
-        out.print(colors.get(colorIndex * 3 + 2));
+    private void writeFaceLine(PrintWriter out, Face face, int numVertices) {
+        out.print("f");
+        for (int i = 0; i < numVertices; i++) {
+            out.print(" " + face.vInd[i] + "/" + face.tInd[i] + "/" + face.nInd[i]);
+        }
         out.println();
     }
 
-    private void writeFaceLine(PrintWriter out, Face face, int numVertices) {
-        out.print("f");
-        if (saveVertexColors) {
-            for (int i = 0; i < numVertices; i++) {
-                out.print(" " + face.vInd[i] + "/" + face.tInd[i] + "/" + face.nInd[i] + "/" + face.cInd[i]);
-            }
-        } else {
-            for (int i = 0; i < numVertices; i++) {
-                out.print(" " + face.vInd[i] + "/" + face.tInd[i] + "/" + face.nInd[i]);
+    private VertexColorBakeResult bakeVertexColorsIntoVertices(ArrayList<Float> vertexCoords,
+                                                               ArrayList<Float> colors) {
+        ArrayList<Float> bakedVertexCoords = new ArrayList<>(vertexCoords.size());
+        ArrayList<Float> bakedVertexColors = new ArrayList<>(vertexCoords.size());
+        HashMap<Long, Integer> bakedIndexByVertexAndColor = new HashMap<>();
+
+        for (Tile tile : outTiles) {
+            bakeVertexColorsIntoFaces(tile.getFIndQuadObj(), vertexCoords, colors,
+                    bakedVertexCoords, bakedVertexColors, bakedIndexByVertexAndColor);
+            bakeVertexColorsIntoFaces(tile.getFIndTriObj(), vertexCoords, colors,
+                    bakedVertexCoords, bakedVertexColors, bakedIndexByVertexAndColor);
+        }
+
+        return new VertexColorBakeResult(bakedVertexCoords, bakedVertexColors);
+    }
+
+    private void bakeVertexColorsIntoFaces(ArrayList<Face> faces,
+                                           ArrayList<Float> vertexCoords,
+                                           ArrayList<Float> colors,
+                                           ArrayList<Float> bakedVertexCoords,
+                                           ArrayList<Float> bakedVertexColors,
+                                           HashMap<Long, Integer> bakedIndexByVertexAndColor) {
+        for (Face face : faces) {
+            for (int i = 0; i < face.vInd.length; i++) {
+                int vertexIndex = face.vInd[i];
+                int colorIndex = face.cInd[i];
+                long key = packVertexColorKey(vertexIndex, colorIndex);
+                Integer bakedIndex = bakedIndexByVertexAndColor.get(key);
+                if (bakedIndex == null) {
+                    bakedIndex = bakedIndexByVertexAndColor.size() + 1;
+                    bakedIndexByVertexAndColor.put(key, bakedIndex);
+                    addVertex(vertexCoords, vertexIndex, bakedVertexCoords);
+                    addColor(colors, colorIndex, bakedVertexColors);
+                }
+                face.vInd[i] = bakedIndex;
             }
         }
-        out.println();
+    }
+
+    private static long packVertexColorKey(int vertexIndex, int colorIndex) {
+        return (((long) vertexIndex) << 32) ^ (colorIndex & 0xffffffffL);
+    }
+
+    private static void addVertex(ArrayList<Float> vertexCoords, int vertexIndex, ArrayList<Float> bakedVertexCoords) {
+        for (int i = 0; i < 3; i++) {
+            bakedVertexCoords.add(getFloatElement(vertexCoords, (vertexIndex - 1) * 3 + i, 0.0f));
+        }
+    }
+
+    private static void addColor(ArrayList<Float> colors, int colorIndex, ArrayList<Float> bakedVertexColors) {
+        for (int i = 0; i < 3; i++) {
+            bakedVertexColors.add(getFloatElement(colors, (colorIndex - 1) * 3 + i, 1.0f));
+        }
+    }
+
+    private static float getFloatElement(ArrayList<Float> values, int index, float defaultValue) {
+        if (index < 0 || index >= values.size()) {
+            return defaultValue;
+        }
+        return values.get(index);
+    }
+
+    private static void applyMapExportRotation(ArrayList<Float> coords) {
+        for (int i = 0; i < coords.size(); i += 3) {
+            float x = coords.get(i);
+            float y = coords.get(i + 1);
+            float z = coords.get(i + 2);
+            // Equivalent to Euler XYZ rotation (-90, 180, 0) degrees.
+            coords.set(i, -x);
+            coords.set(i + 1, z);
+            coords.set(i + 2, y);
+        }
+    }
+
+    private static class VertexColorBakeResult {
+
+        private final ArrayList<Float> vertexCoords;
+        private final ArrayList<Float> vertexColors;
+
+        private VertexColorBakeResult(ArrayList<Float> vertexCoords, ArrayList<Float> vertexColors) {
+            this.vertexCoords = vertexCoords;
+            this.vertexColors = vertexColors;
+        }
+
     }
 
     private void writeFaceLine(PrintWriter out, ArrayList<Integer> vInd,

@@ -18,6 +18,7 @@ import editor.game.Game;
 import editor.grid.MapGrid;
 import editor.handler.MapData;
 import editor.handler.MapEditorHandler;
+import formats.fbx.FbxWriter;
 import formats.mapbin.MapBinHGSS;
 import formats.obj.ObjWriter;
 
@@ -474,6 +475,87 @@ public class MapMatrix {
 
     }
 
+    public void saveMapsAsFbx(String path, boolean saveTextures, boolean includeVertexColors, HashSet<Integer> exportGroups, float tileUpscale) throws FileNotFoundException {
+        removeUnusedMaps();
+
+        String folderPath = new File(path).getParent();
+        String fileName = Utils.removeExtensionFromPath(new File(path).getName());
+        String fbxFilePath;
+
+        if (exportGroups != null) {
+            for (int index : exportGroups) {
+                HashMap<Point, MapGrid> currentExportGroup = generateGridHashMap(index);
+
+                if (index == 0) {
+                    for (HashMap.Entry<Point, MapGrid> mapEntry : currentExportGroup.entrySet()) {
+                        fbxFilePath = getFilePathWithCoords(matrix, folderPath, fileName, mapEntry.getKey(), "fbx");
+                        mapEntry.getValue().saveMapToFBX(handler.getTileset(), fbxFilePath, saveTextures, includeVertexColors, tileUpscale);
+                    }
+                } else {
+                    int lowestXcoord;
+                    int lowestYcoord;
+
+                    Point groupCenterCoords = this.getExportGroupCenterCoords(index);
+
+                    if (groupCenterCoords == null) {
+                        TreeSet<Point> pointTS = new TreeSet<>(new PointComparator());
+                        for (Point p : currentExportGroup.keySet()) {
+                            pointTS.add(p);
+                        }
+
+                        lowestXcoord = (int) pointTS.first().getX();
+                        lowestYcoord = (int) pointTS.first().getY();
+                        groupCenterCoords = new Point(lowestXcoord, lowestYcoord);
+                    } else {
+                        lowestXcoord = (int) groupCenterCoords.getX();
+                        lowestYcoord = (int) groupCenterCoords.getY();
+                    }
+
+                    HashMap<Point, MapGrid> newExportGroup = new HashMap<>();
+                    for (HashMap.Entry<Point, MapGrid> mapEntry : currentExportGroup.entrySet()) {
+                        Point currentPoint = new Point(mapEntry.getKey());
+                        currentPoint.translate(-lowestXcoord, -lowestYcoord);
+
+                        newExportGroup.put(currentPoint, mapEntry.getValue());
+                    }
+
+                    final String groupSuffix = "Group";
+                    final String groupIndexSuffix = groupSuffix + index;
+                    final String underscoreGroupIndexSuffix = '_' + groupIndexSuffix;
+
+                    if (fileName.toUpperCase().indexOf(underscoreGroupIndexSuffix.toUpperCase()) >= 0) {
+                        fbxFilePath = folderPath + File.separator + fileName + ".fbx";
+                    } else if (fileName.toUpperCase().indexOf(groupIndexSuffix.toUpperCase()) == 0) {
+                        fbxFilePath = getFilePathWithCoords(matrix, folderPath, fileName.substring(0, groupIndexSuffix.length()) + '_', groupCenterCoords, "fbx");
+                    } else {
+                        fbxFilePath = getFilePathWithCoords(matrix, folderPath, fileName + groupSuffix + '_', groupCenterCoords, "fbx");
+                    }
+
+                    new FbxWriter(handler.getTileset(), newExportGroup, fbxFilePath, handler.getGameIndex(), saveTextures, includeVertexColors, tileUpscale).writeMapFbx();
+                }
+            }
+        } else {
+            for (HashMap.Entry<Point, MapData> mapEntry : matrix.entrySet()) {
+                fbxFilePath = getFilePathWithCoords(matrix, folderPath, fileName, mapEntry.getKey(), "fbx");
+                mapEntry.getValue().getGrid().saveMapToFBX(handler.getTileset(), fbxFilePath, saveTextures, includeVertexColors, tileUpscale);
+            }
+        }
+    }
+
+    public void saveMapsAsFbxJoined(String path, boolean saveTextures, boolean includeVertexColors, float tileUpscale) throws FileNotFoundException {
+        removeUnusedMaps();
+
+        String folderPath = new File(path).getParent();
+        String fileName = Utils.removeExtensionFromPath(new File(path).getName());
+
+        String fbxFilePath = folderPath + File.separator + fileName + ".fbx";
+
+        FbxWriter writer = new FbxWriter(handler.getTileset(), generateGridHashMap(), fbxFilePath, handler.getGameIndex(),
+                saveTextures, includeVertexColors, tileUpscale);
+        writer.writeMapFbx();
+
+    }
+
     public void saveBDHCs(Set<Map.Entry<Point, MapData>> entrySet) throws IOException {
         int game = handler.getGameIndex();
         for (HashMap.Entry<Point, MapData> mapEntry : entrySet) {
@@ -919,6 +1001,7 @@ public class MapMatrix {
             String folderPath = new File(filePath).getParent();
 
             removeUnusedMapFiles(folderPath, "obj");
+            removeUnusedMapFiles(folderPath, "fbx");
             removeUnusedMapFiles(folderPath, "mtl");
             removeUnusedMapFiles(folderPath, "imd");
             removeUnusedMapFiles(folderPath, "nsbmd");

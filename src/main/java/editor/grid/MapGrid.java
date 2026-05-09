@@ -2,6 +2,7 @@
 package editor.grid;
 
 import editor.handler.MapEditorHandler;
+import formats.fbx.FbxWriter;
 import formats.obj.ObjWriter;
 
 import java.io.BufferedReader;
@@ -125,6 +126,14 @@ public class MapGrid {
         ObjWriter writer = new ObjWriter(tset, this, path, handler.getGameIndex(),
                 saveTextures, includeVertexColors, tileUpscale);
         writer.writeMapObj();
+    }
+
+    public void saveMapToFBX(Tileset tset, String path, boolean saveTextures,
+                             boolean includeVertexColors, float tileUpscale) throws FileNotFoundException {
+
+        FbxWriter writer = new FbxWriter(tset, this, path, handler.getGameIndex(),
+                saveTextures, includeVertexColors, tileUpscale);
+        writer.writeMapFbx();
     }
 
     public static void loadMatrixFromFile(BufferedReader br, int[][] matrix) throws IOException {

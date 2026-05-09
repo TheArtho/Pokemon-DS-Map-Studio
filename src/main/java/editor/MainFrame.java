@@ -198,6 +198,10 @@ public class MainFrame extends JFrame {
         saveMapAsObjWithDialog(true);
     }
 
+    private void jmiExportFbxWithTextActionPerformed(ActionEvent e) {
+        saveMapAsFbxWithDialog(true);
+    }
+
     private void jmiExportMapAsImdActionPerformed(ActionEvent e) {
         singleObjToImdDialog();
     }
@@ -355,6 +359,10 @@ public class MainFrame extends JFrame {
 
     private void jbExportObjActionPerformed(ActionEvent e) {
         saveMapsAsObjWithDialog(true);
+    }
+
+    private void jbExportFbxActionPerformed(ActionEvent e) {
+        saveMapsAsFbxWithDialog(true);
     }
 
     private void jbExportImdActionPerformed(ActionEvent e) {
@@ -749,6 +757,10 @@ public class MainFrame extends JFrame {
     private boolean saveMapAsObjWithDialog(boolean saveTextures) {
         return mapExportActions.saveMapAsObjWithDialog(saveTextures);
     }
+
+    private boolean saveMapAsFbxWithDialog(boolean saveTextures) {
+        return mapExportActions.saveMapAsFbxWithDialog(saveTextures);
+    }
     
     private void saveMapAsBinWithDialog(){
         mapExportActions.saveMapAsBinWithDialog();
@@ -756,6 +768,10 @@ public class MainFrame extends JFrame {
 
     private boolean saveMapsAsObjWithDialog(boolean saveTextures) {
         return mapExportActions.saveMapsAsObjWithDialog(saveTextures);
+    }
+
+    private boolean saveMapsAsFbxWithDialog(boolean saveTextures) {
+        return mapExportActions.saveMapsAsFbxWithDialog(saveTextures);
     }
 
     public void writeTileset() throws FileNotFoundException, ParserConfigurationException, TransformerException, IOException {
@@ -1014,6 +1030,7 @@ public class MainFrame extends JFrame {
         jmiAddMaps = new JMenuItem();
         jmiSplitPDSMAPbyArea = new JMenuItem();
         jmiExportObjWithText = new JMenuItem();
+        jmiExportFbxWithText = new JMenuItem();
         jmiExportMapAsImd = new JMenuItem();
         jmiExportMapAsNsb = new JMenuItem();
         jmiExportMapBtx = new JMenuItem();
@@ -1056,6 +1073,7 @@ public class MainFrame extends JFrame {
         jbSaveMap = new JButton();
         jbAddMaps = new JButton();
         jbExportObj2 = new JButton();
+        jbExportFbx = new JButton();
         jbExportImd = new JButton();
         jbExportNsb = new JButton();
         jbExportBin = new JButton();
@@ -1257,6 +1275,12 @@ public class MainFrame extends JFrame {
                 jmiExportObjWithText.setText("Export current Map as OBJ...");
                 jmiExportObjWithText.addActionListener(e -> jmiExportObjWithTextActionPerformed(e));
                 jmFile.add(jmiExportObjWithText);
+
+                //---- jmiExportFbxWithText ----
+                jmiExportFbxWithText.setIcon(new ImageIcon(getClass().getResource("/icons/ExportIcon.png")));
+                jmiExportFbxWithText.setText("Export current Map as FBX...");
+                jmiExportFbxWithText.addActionListener(e -> jmiExportFbxWithTextActionPerformed(e));
+                jmFile.add(jmiExportFbxWithText);
 
                 //---- jmiExportMapAsImd ----
                 jmiExportMapAsImd.setIcon(new ImageIcon(getClass().getResource("/icons/ExportIcon.png")));
@@ -1599,6 +1623,19 @@ public class MainFrame extends JFrame {
             jbExportObj2.setVerticalTextPosition(SwingConstants.BOTTOM);
             jbExportObj2.addActionListener(e -> jbExportObjActionPerformed(e));
             jtMainToolbar.add(jbExportObj2);
+
+            //---- jbExportFbx ----
+            jbExportFbx.setText("FBX");
+            jbExportFbx.setToolTipText("Export as FBX with Textures");
+            jbExportFbx.setFocusable(false);
+            jbExportFbx.setHorizontalTextPosition(SwingConstants.CENTER);
+            jbExportFbx.setMaximumSize(new Dimension(38, 38));
+            jbExportFbx.setMinimumSize(new Dimension(38, 38));
+            jbExportFbx.setName("");
+            jbExportFbx.setPreferredSize(new Dimension(38, 38));
+            jbExportFbx.setVerticalTextPosition(SwingConstants.BOTTOM);
+            jbExportFbx.addActionListener(e -> jbExportFbxActionPerformed(e));
+            jtMainToolbar.add(jbExportFbx);
 
             //---- jbExportImd ----
             jbExportImd.setIcon(new ImageIcon(getClass().getResource("/icons/exportImdIcon.png")));
@@ -2753,6 +2790,7 @@ public class MainFrame extends JFrame {
     private JMenuItem jmiAddMaps;
     private JMenuItem jmiSplitPDSMAPbyArea;
     private JMenuItem jmiExportObjWithText;
+    private JMenuItem jmiExportFbxWithText;
     private JMenuItem jmiExportMapAsImd;
     private JMenuItem jmiExportMapAsNsb;
     private JMenuItem jmiExportMapBtx;
@@ -2797,6 +2835,7 @@ public class MainFrame extends JFrame {
     private JButton jbUndo;
     private JButton jbRedo;
     private JButton jbExportObj2;
+    private JButton jbExportFbx;
     private JButton jbExportImd;
     private JButton jbExportNsb;
     private JButton jbExportBin;

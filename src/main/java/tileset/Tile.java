@@ -414,6 +414,7 @@ public class Tile {
 
         boolean firstColorAdded = false;
         int firstColorIndex = 0;
+        ArrayList<Integer> vertexColorIndices = new ArrayList<>();
         String mtlName = "";
         int materialIndex = 0;
         String lineObj;
@@ -424,12 +425,26 @@ public class Tile {
 
             } else if (lineObj.startsWith("v ")) {
                 lineObj = lineObj.substring(2);
-                for (String s : lineObj.split(" ")) {
+                String[] elements = lineObj.trim().split("\\s+");
+                for (int i = 0; i < 3; i++) {
                     try {
-                        vCoordsObj.add(Float.valueOf(s));
-                    } catch (NumberFormatException ex) {
+                        vCoordsObj.add(Float.valueOf(elements[i]));
+                    } catch (NumberFormatException | IndexOutOfBoundsException ex) {
                         vCoordsObj.add(0.0f); //TODO: Improve this?
                     }
+                }
+                if (elements.length >= 6) {
+                    int colorIndex = colorsObj.size() / 3 + 1;
+                    for (int i = 3; i < 6; i++) {
+                        try {
+                            colorsObj.add(Float.valueOf(elements[i]));
+                        } catch (NumberFormatException ex) {
+                            colorsObj.add(1.0f);
+                        }
+                    }
+                    vertexColorIndices.add(colorIndex);
+                } else {
+                    vertexColorIndices.add(0);
                 }
             } else if (lineObj.startsWith("vt")) {
                 for (String s : (lineObj.substring(3)).split(" ")) {
@@ -492,15 +507,20 @@ public class Tile {
                     if (sArray.length > 3) {
                         f.cInd[i] = Integer.valueOf(sArray[3]);
                     } else {
-                        if (!firstColorAdded) {
-                            firstColorIndex = colorsObj.size() / 3 + 1;
-                            f.cInd[i] = firstColorIndex;
-                            colorsObj.add(1.0f);
-                            colorsObj.add(1.0f);
-                            colorsObj.add(1.0f);
-                            firstColorAdded = true;
+                        int vertexColorIndex = getVertexColorIndex(vertexColorIndices, f.vInd[i]);
+                        if (vertexColorIndex > 0) {
+                            f.cInd[i] = vertexColorIndex;
                         } else {
-                            f.cInd[i] = firstColorIndex;
+                            if (!firstColorAdded) {
+                                firstColorIndex = colorsObj.size() / 3 + 1;
+                                f.cInd[i] = firstColorIndex;
+                                colorsObj.add(1.0f);
+                                colorsObj.add(1.0f);
+                                colorsObj.add(1.0f);
+                                firstColorAdded = true;
+                            } else {
+                                f.cInd[i] = firstColorIndex;
+                            }
                         }
                     }
                 }
@@ -723,6 +743,14 @@ public class Tile {
         this.nCoordsTri = floatListToArray(nCoordsTri);
         this.colorsTri = floatListToArray(colorsTri);
 
+    }
+
+    private static int getVertexColorIndex(ArrayList<Integer> vertexColorIndices, int vertexIndex) {
+        int index = vertexIndex - 1;
+        if (index < 0 || index >= vertexColorIndices.size()) {
+            return 0;
+        }
+        return vertexColorIndices.get(index);
     }
 
     public static BufferedImage loadTextureImgWithDefault(String path) throws IOException {

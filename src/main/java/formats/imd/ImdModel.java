@@ -448,6 +448,7 @@ public class ImdModel extends ImdNode {
         String mtlName = "";
         int numQuads = 0;
         int numTris = 0;
+        ArrayList<Integer> vertexColorIndices = new ArrayList<>();
 
         String lineObj;
         while ((lineObj = brObj.readLine()) != null) {
@@ -458,8 +459,18 @@ public class ImdModel extends ImdNode {
 
             } else if (lineObj.startsWith("v ")) {
                 lineObj = lineObj.substring(2);
-                for (String s : lineObj.split(" ")) {
-                    vCoordsObj.add(Float.valueOf(s));
+                String[] elements = lineObj.trim().split("\\s+");
+                for (int i = 0; i < 3; i++) {
+                    vCoordsObj.add(Float.valueOf(elements[i]));
+                }
+                if (elements.length >= 6) {
+                    int colorIndex = colorsObj.size() / 3 + 1;
+                    for (int i = 3; i < 6; i++) {
+                        colorsObj.add(Float.valueOf(elements[i]));
+                    }
+                    vertexColorIndices.add(colorIndex);
+                } else {
+                    vertexColorIndices.add(0);
                 }
             } else if (lineObj.startsWith("vt")) {
                 for (String s : (lineObj.substring(3)).split(" ")) {
@@ -498,10 +509,15 @@ public class ImdModel extends ImdNode {
                     if (sArray.length > 3) {
                         f.cInd[i] = Integer.valueOf(sArray[3]);
                     } else {
-                        f.cInd[i] = colorsObj.size() / 3 + 1;//TODO REVISE THIS!!!
-                        colorsObj.add(1.0f);
-                        colorsObj.add(1.0f);
-                        colorsObj.add(1.0f);
+                        int vertexColorIndex = getVertexColorIndex(vertexColorIndices, f.vInd[i]);
+                        if (vertexColorIndex > 0) {
+                            f.cInd[i] = vertexColorIndex;
+                        } else {
+                            f.cInd[i] = colorsObj.size() / 3 + 1;//TODO REVISE THIS!!!
+                            colorsObj.add(1.0f);
+                            colorsObj.add(1.0f);
+                            colorsObj.add(1.0f);
+                        }
                     }
                 }
                 if (f.isQuad) {
@@ -587,6 +603,14 @@ public class ImdModel extends ImdNode {
             }
         }
         return count;
+    }
+
+    private static int getVertexColorIndex(ArrayList<Integer> vertexColorIndices, int vertexIndex) {
+        int index = vertexIndex - 1;
+        if (index < 0 || index >= vertexColorIndices.size()) {
+            return 0;
+        }
+        return vertexColorIndices.get(index);
     }
 
     public void objDataToPolygonData(ArrayList<Face> fIndsQuad,
